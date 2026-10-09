@@ -6,7 +6,6 @@ import {
   ArrowUpDown,
   ChevronLeft,
   ChevronRight,
-  Filter,
 } from 'lucide-react';
 import type { CustomerBookingHistory, BookingHistoryStatus, PaymentHistoryStatus } from '../types/booking-history';
 import {
@@ -17,7 +16,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 import dayjs from '@/lib/dayjs';
 
 interface BookingHistoryTableProps {
@@ -28,6 +26,7 @@ interface BookingHistoryTableProps {
 export const BookingHistoryTable: React.FC<BookingHistoryTableProps> = memo(
   ({ bookings, isLoading = false }) => {
     const { t } = useTranslation();
+    void isLoading;
 
     const [statusFilter, setStatusFilter] = useState<BookingHistoryStatus | 'all'>('all');
     const [paymentFilter, setPaymentFilter] = useState<PaymentHistoryStatus | 'all'>('all');

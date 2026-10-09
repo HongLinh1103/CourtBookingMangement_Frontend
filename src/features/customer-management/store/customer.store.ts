@@ -1,19 +1,19 @@
 import { create } from 'zustand';
-import type { CustomerFilters, PaginationState } from '../types/customer';
+import type { CustomerFilterState, PaginationState } from '../types/customer';
 
 export interface CustomerState {
   searchKeyword: string;
   selectedCustomerId: string | null;
-  filters: CustomerFilters;
+  filters: CustomerFilterState;
   pagination: PaginationState;
   setSearchKeyword: (keyword: string) => void;
   setSelectedCustomerId: (id: string | null) => void;
-  setFilters: (filters: Partial<CustomerFilters>) => void;
+  setFilters: (filters: Partial<CustomerFilterState>) => void;
   setPagination: (pagination: Partial<PaginationState>) => void;
   resetFilters: () => void;
 }
 
-const initialFilters: CustomerFilters = {
+const initialFilters: CustomerFilterState = {
   status: 'all',
   memberType: 'all',
   isGuest: 'all',

@@ -1,22 +1,34 @@
+export const MIN_SLOT_WIDTH = 60;
+export const MAX_SLOT_WIDTH = 140;
 export const SLOT_WIDTH = 80;
+export const COURT_COLUMN_WIDTH = 80;
+export const BOUNDARY_PADDING_PX = 28;
 
 export const SCHEDULER_CONFIG = {
   START_TIME: '05:00',
-  END_TIME: '24:00',
-  DEFAULT_INTERVAL_MINUTES: 30,
-  SUPPORTED_INTERVALS: [15, 30, 60] as const,
+  END_TIME: '23:00',
+  SLOT_DURATION: 60,
+  DEFAULT_INTERVAL_MINUTES: 60,
+  SUPPORTED_INTERVALS: [60, 30, 15] as const,
 
   // Geometry (pixels)
-  SLOT_WIDTH: 80, // Single source of truth
-  BASE_SLOT_WIDTH: 80, // width of one slot at 1.0 zoom
-  MIN_SLOT_WIDTH: 50,
-  MAX_SLOT_WIDTH: 140,
+  SLOT_WIDTH,
+  BASE_SLOT_WIDTH: SLOT_WIDTH,
+  MIN_SLOT_WIDTH,
+  MAX_SLOT_WIDTH,
+  BOUNDARY_PADDING_PX,
+  RESPONSIVE_SLOT_WIDTH: {
+    DESKTOP: 100,
+    TABLET: 90,
+    MOBILE: 60,
+  },
 
-  ROW_HEIGHT: 44,
-  TIME_HEADER_HEIGHT: 42,
-  DATE_COLUMN_WIDTH: 36, // far left vertical date label ("Thứ 7 15/08")
-  COURT_NAME_WIDTH: 76, // "Sân 1", "Sân 2", ...
-  TOTAL_LEFT_COLUMN_WIDTH: 112, // DATE_COLUMN_WIDTH + COURT_NAME_WIDTH
+  ROW_HEIGHT: 48,
+  TIME_HEADER_HEIGHT: 44,
+  DATE_COLUMN_WIDTH: 40, // far left vertical date label ("Thứ 7 15/08")
+  COURT_NAME_WIDTH: 100, // "Sân 1", "Sân 2", ...
+  COURT_COLUMN_WIDTH: 80,
+  TOTAL_LEFT_COLUMN_WIDTH: 140, // DATE_COLUMN_WIDTH + COURT_NAME_WIDTH
 
   // Virtualization thresholds
   OVERSCAN_ROWS: 5,
