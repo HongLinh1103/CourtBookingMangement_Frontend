@@ -49,7 +49,7 @@ export const useMatches = (filters: Omit<PlayerMatchingFilterParams, 'pageNumber
       }),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => {
-      if (lastPage.metadata?.hasNextPage) {
+      if (lastPage.success && lastPage.metadata?.hasNextPage) {
         return (lastPage.metadata.pageNumber ?? 1) + 1;
       }
       return undefined;

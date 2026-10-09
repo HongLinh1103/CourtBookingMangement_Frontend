@@ -4,9 +4,8 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectSeparator,
 } from '@/components/ui/select';
-import { Clock, ChevronDown, Check } from 'lucide-react';
+import { Clock, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface SlotIntervalSelectProps {

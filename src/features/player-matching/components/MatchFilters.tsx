@@ -64,7 +64,7 @@ export const MatchFilters = () => {
 
   // Fetch branches for branch dropdown
   const { data: branchesResponse } = useBranches();
-  const branches = branchesResponse?.data ?? [];
+  const branches = branchesResponse?.success ? branchesResponse.data : [];
 
   const hasActiveFilters =
     Boolean(search) ||

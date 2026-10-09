@@ -36,7 +36,9 @@ export const MatchList = () => {
   const allMatches: MatchItem[] =
     data?.pages.flatMap((page) => (page.success ? page.data : [])) ?? [];
 
-  const totalCount = data?.pages[0]?.metadata?.totalCount ?? allMatches.length;
+  const firstPage = data?.pages[0];
+  const totalCount =
+    firstPage?.success && firstPage.metadata ? firstPage.metadata.totalCount : allMatches.length;
 
   // Infinite scroll observer sentinel
   const observerRef = useRef<HTMLDivElement | null>(null);

@@ -6,7 +6,7 @@ import {
   SelectTrigger,
 } from '@/components/ui/select';
 import type { CustomerCourt } from '../types/customer-court';
-import { ChevronDown, Trophy } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface MobileCourtSelectProps {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Search, X, Loader2, User, Phone, Crown } from 'lucide-react';
+import { Search, X, Loader2, Phone, Crown } from 'lucide-react';
 import { customerApi } from '../api/customer.api';
 import type { Customer } from '../types/customer';
 import { MEMBER_TYPE_CONFIG } from '../constants/customer-status';

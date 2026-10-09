@@ -28,7 +28,7 @@ export interface Customer {
   updatedDate: string; // ISO string
 }
 
-export interface CustomerFilters {
+export interface CustomerFilterState {
   status?: CustomerStatus | 'all';
   memberType?: MemberType | 'all';
   isGuest?: boolean | 'all';

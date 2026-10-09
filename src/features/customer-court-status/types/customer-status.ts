@@ -1,13 +1,15 @@
 export type CustomerCourtStatusType = 'AVAILABLE' | 'BOOKED' | 'LOCKED' | 'EVENT' | 'PAST';
 
-export enum SchedulerSlotState {
-  AVAILABLE = 'AVAILABLE',
-  BOOKED = 'BOOKED',
-  LOCKED = 'LOCKED',
-  EVENT = 'EVENT',
-  PAST = 'PAST',
-  SELECTED = 'SELECTED',
-}
+export const SchedulerSlotState = {
+  AVAILABLE: 'AVAILABLE',
+  BOOKED: 'BOOKED',
+  LOCKED: 'LOCKED',
+  EVENT: 'EVENT',
+  PAST: 'PAST',
+  SELECTED: 'SELECTED',
+} as const;
+
+export type SchedulerSlotState = (typeof SchedulerSlotState)[keyof typeof SchedulerSlotState];
 
 export interface CustomerCourtStatusConfig {
   id: CustomerCourtStatusType;

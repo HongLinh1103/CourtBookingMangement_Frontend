@@ -4,12 +4,10 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
-  SelectLabel,
   SelectSeparator,
 } from '@/components/ui/select';
 import type { CustomerBranch } from '../types/customer-court';
-import { Building2, MapPin, ChevronDown, Check, Star } from 'lucide-react';
+import { Building2, MapPin, ChevronDown, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface BranchSelectDropdownProps {

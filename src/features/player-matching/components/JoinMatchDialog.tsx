@@ -27,6 +27,7 @@ export const JoinMatchDialog = ({ match, isOpen, onClose }: JoinMatchDialogProps
   const [skillLevel, setSkillLevel] = useState('Intermediate');
   const noteId = useId();
   const skillId = useId();
+  const phoneId = useId();
 
   const joinMutation = useJoinMatch();
 
@@ -139,6 +140,8 @@ export const JoinMatchDialog = ({ match, isOpen, onClose }: JoinMatchDialogProps
                 Số điện thoại liên hệ <span className="text-danger">*</span>
               </label>
               <TextInput
+                id={phoneId}
+                label="Số điện thoại liên hệ"
                 required
                 type="tel"
                 placeholder="Nhập số điện thoại của bạn (Zalo)"
