@@ -5,9 +5,27 @@ import type { CourtItem, CourtBranch, CourtGroup } from '../types/court';
 import { SchedulerService } from '../services/scheduler.service';
 
 const MOCK_BRANCHES: CourtBranch[] = [
-  { id: 'tmt-demo', name: 'TMT (Sân DEMO của ALOBO)', address: '123 Huỳnh Thúc Kháng, Q.1, TP.HCM' },
-  { id: 'alobo-quan-7', name: 'ALOBO Club Quận 7', address: '456 Nguyễn Hữu Thọ, Q.7, TP.HCM' },
-  { id: 'alobo-tan-binh', name: 'ALOBO Sân Cầu Lông Tân Bình', address: '789 Cộng Hòa, Q.Tân Bình, TP.HCM' },
+  {
+    id: 'tmt-demo',
+    name: 'TMT (Sân DEMO của ALOBO)',
+    address: '123 Huỳnh Thúc Kháng, Q.1, TP.HCM',
+    openTime: '05:00',
+    closeTime: '23:00',
+  },
+  {
+    id: 'alobo-quan-7',
+    name: 'ALOBO Club Quận 7',
+    address: '456 Nguyễn Hữu Thọ, Q.7, TP.HCM',
+    openTime: '05:00',
+    closeTime: '22:00',
+  },
+  {
+    id: 'alobo-tan-binh',
+    name: 'ALOBO Sân Cầu Lông Tân Bình',
+    address: '789 Cộng Hòa, Q.Tân Bình, TP.HCM',
+    openTime: '05:00',
+    closeTime: '24:00',
+  },
 ];
 
 const MOCK_GROUPS: CourtGroup[] = [
@@ -45,7 +63,7 @@ let inMemoryBookings: BookingItem[] = [
     membership: 'Corporate',
     date: '2026-09-27',
     startTime: '16:00',
-    endTime: '20:30',
+    endTime: '20:00',
     bookingType: 'event',
     bookingStatus: 'confirmed',
     paymentStatus: 'paid',
@@ -64,7 +82,7 @@ let inMemoryBookings: BookingItem[] = [
     membership: 'Corporate',
     date: '2026-09-27',
     startTime: '16:00',
-    endTime: '20:30',
+    endTime: '20:00',
     bookingType: 'event',
     bookingStatus: 'confirmed',
     paymentStatus: 'paid',
