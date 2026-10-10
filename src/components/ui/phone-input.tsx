@@ -17,6 +17,8 @@ export interface Country {
   flag: string;
 }
 
+// Country metadata is shared by the phone input and form validation.
+// eslint-disable-next-line react-refresh/only-export-components
 export const COUNTRIES: Country[] = [
   { iso2: 'VN', dialCode: '+84', name: 'Việt Nam', flag: '🇻🇳' },
   { iso2: 'SG', dialCode: '+65', name: 'Singapore', flag: '🇸🇬' },

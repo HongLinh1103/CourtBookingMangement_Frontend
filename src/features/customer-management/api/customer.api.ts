@@ -13,7 +13,7 @@ import { createErrorResponse } from '@/mocks/shared/mock-error';
 import { mockDelay } from '@/mocks/shared/mock-delay';
 
 // Mock Customers Database Seed
-let inMemoryCustomers: Customer[] = [
+const inMemoryCustomers: Customer[] = [
   {
     id: 'cust-001',
     customerCode: 'KH001',

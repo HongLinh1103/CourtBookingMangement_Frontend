@@ -1,5 +1,6 @@
-import React, { memo, useRef, useMemo, useCallback } from 'react';
+import React, { memo, useRef, useMemo, useCallback, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import dayjs from 'dayjs';
 import type { CourtItem } from '../types/court';
 import type { BookingItem } from '../types/booking';
 import type { SlotSelectionRange } from '../types/common';
@@ -8,6 +9,7 @@ import { SCHEDULER_CONFIG } from '../constants/scheduler';
 import { useCourtStatusStore } from '../store/court-status.store';
 import { useSchedulerVirtualization } from '../hooks/useSchedulerVirtualization';
 import { useSlotSelection } from '../hooks/useSlotSelection';
+import { useSchedulerDimensions } from '../hooks/useSchedulerDimensions';
 import { TimeHeader } from './TimeHeader';
 import { CourtColumn } from './CourtColumn';
 import { SchedulerGrid } from './SchedulerGrid';
@@ -17,6 +19,8 @@ import { toast } from '@/lib/toast';
 interface CourtSchedulerProps {
   courts: CourtItem[];
   bookings: BookingItem[];
+  openTime?: string;
+  closeTime?: string;
   slotInterval: number;
   dateLabel: { dayOfWeek: string; formattedDate: string };
   zoomLevel: number;
@@ -42,6 +46,8 @@ export const CourtScheduler: React.FC<CourtSchedulerProps> = memo(
   ({
     courts,
     bookings,
+    openTime = SCHEDULER_CONFIG.START_TIME,
+    closeTime = SCHEDULER_CONFIG.END_TIME,
     slotInterval,
     dateLabel,
     zoomLevel,
@@ -58,26 +64,49 @@ export const CourtScheduler: React.FC<CourtSchedulerProps> = memo(
   }) => {
     const { t } = useTranslation();
     const containerRef = useRef<HTMLDivElement>(null);
+    const hasAutoScrolledRef = useRef<string | null>(null);
+
+    const [showLeftShadow, setShowLeftShadow] = useState(false);
+    const [showRightShadow, setShowRightShadow] = useState(false);
+    const [nowTick, setNowTick] = useState<number>(() => Date.now());
 
     const selectedDate = useCourtStatusStore((s) => s.selectedDate);
     const isPastDate = useMemo(() => SchedulerService.isPastDate(selectedDate), [selectedDate]);
 
-    // Calculate dynamic slot width based on zoom level
-    const slotWidth = useMemo(() => {
-      const computed = Math.round(SCHEDULER_CONFIG.BASE_SLOT_WIDTH * zoomLevel);
-      return Math.max(SCHEDULER_CONFIG.MIN_SLOT_WIDTH, Math.min(SCHEDULER_CONFIG.MAX_SLOT_WIDTH, computed));
-    }, [zoomLevel]);
+    // Dynamic responsive dimensions derived from branch operating hours and container width
+    const {
+      slotWidth,
+      gridWidth: totalGridWidth,
+      timelineWidth,
+      openTime: normalizedOpenTime,
+      closeTime: normalizedCloseTime,
+    } = useSchedulerDimensions({
+      containerRef,
+      openTime,
+      closeTime,
+      slotInterval,
+      courtColumnWidth: SCHEDULER_CONFIG.TOTAL_LEFT_COLUMN_WIDTH,
+      zoomLevel,
+    });
 
-    // Generate time slots based on interval (30 min default, supports 15 min without code changes)
+    // Generate time slots based on branch operating hours and interval
     const timeSlots = useMemo(
       () =>
         SchedulerService.generateTimeSlots(
-          SCHEDULER_CONFIG.START_TIME,
-          SCHEDULER_CONFIG.END_TIME,
+          normalizedOpenTime,
+          normalizedCloseTime,
           slotInterval,
         ),
-      [slotInterval],
+      [normalizedOpenTime, normalizedCloseTime, slotInterval],
     );
+
+    // Refresh current time indicator every 60 seconds
+    useEffect(() => {
+      const interval = window.setInterval(() => {
+        setNowTick(Date.now());
+      }, 60_000);
+      return () => window.clearInterval(interval);
+    }, []);
 
     // Multi time slot click-to-select hook
     const {
@@ -95,9 +124,57 @@ export const CourtScheduler: React.FC<CourtSchedulerProps> = memo(
       overscan: SCHEDULER_CONFIG.OVERSCAN_ROWS,
     });
 
-    const totalGridWidth = useMemo(() => {
-      return timeSlots.length * slotWidth;
-    }, [timeSlots.length, slotWidth]);
+    // Current time indicator offset & label (when selectedDate is today)
+    const { currentTimeOffsetPx, currentTimeLabel } = useMemo(() => {
+      void nowTick;
+      if (!SchedulerService.isToday(selectedDate)) {
+        return { currentTimeOffsetPx: null, currentTimeLabel: undefined };
+      }
+      const now = dayjs();
+      const currentMinutes = now.hour() * 60 + now.minute();
+      const startMinutes = SchedulerService.parseTimeToMinutes(normalizedOpenTime);
+      const endMinutes = SchedulerService.parseTimeToMinutes(normalizedCloseTime);
+
+      if (currentMinutes < startMinutes || currentMinutes > endMinutes) {
+        return { currentTimeOffsetPx: null, currentTimeLabel: undefined };
+      }
+
+      const safeInterval = slotInterval > 0 ? slotInterval : SCHEDULER_CONFIG.SLOT_DURATION;
+      const offsetPx = Math.round(((currentMinutes - startMinutes) / safeInterval) * slotWidth);
+      return {
+        currentTimeOffsetPx: offsetPx,
+        currentTimeLabel: now.format('HH:mm'),
+      };
+    }, [selectedDate, normalizedOpenTime, normalizedCloseTime, slotInterval, slotWidth, nowTick]);
+
+    // Update horizontal scroll shadow state
+    const updateScrollShadows = useCallback(() => {
+      const el = containerRef.current;
+      if (!el) return;
+      const { scrollLeft, scrollWidth, clientWidth } = el;
+      setShowLeftShadow(scrollLeft > 8);
+      setShowRightShadow(scrollLeft + clientWidth < scrollWidth - 8);
+    }, []);
+
+    useEffect(() => {
+      updateScrollShadows();
+    }, [slotWidth, timelineWidth, updateScrollShadows]);
+
+    // Auto-scroll to current time when viewing today's schedule (only if horizontally scrollable)
+    useEffect(() => {
+      const el = containerRef.current;
+      if (!el) return;
+      if (hasAutoScrolledRef.current === selectedDate) return;
+
+      const isOverflowing = el.scrollWidth > el.clientWidth + 8;
+      if (isOverflowing && currentTimeOffsetPx !== null && currentTimeOffsetPx > 0) {
+        const targetScroll = Math.max(0, currentTimeOffsetPx - slotWidth * 1.5);
+        el.scrollTo({ left: targetScroll, behavior: 'smooth' });
+        hasAutoScrolledRef.current = selectedDate;
+      } else {
+        hasAutoScrolledRef.current = selectedDate;
+      }
+    }, [selectedDate, currentTimeOffsetPx, slotWidth]);
 
     const handleConfirmSelection = useCallback(
       (selection: SlotSelectionRange) => {
@@ -149,7 +226,7 @@ export const CourtScheduler: React.FC<CourtSchedulerProps> = memo(
     );
 
     return (
-      <div className="relative flex flex-col h-full w-full bg-white select-none overflow-hidden">
+      <div className="relative flex flex-col flex-1 h-full w-full bg-white select-none overflow-hidden">
         {/* Past Date Protection Alert Banner */}
         {isPastDate && (
           <div
@@ -168,23 +245,47 @@ export const CourtScheduler: React.FC<CourtSchedulerProps> = memo(
             </span>
           </div>
         )}
+
+        {/* Mobile / Tablet Scroll Shadow Indicators */}
+        {showLeftShadow && (
+          <div
+            aria-hidden="true"
+            style={{ left: `${SCHEDULER_CONFIG.TOTAL_LEFT_COLUMN_WIDTH}px` }}
+            className="pointer-events-none absolute top-0 bottom-12 z-25 w-5 bg-gradient-to-r from-slate-900/10 to-transparent transition-opacity duration-200"
+          />
+        )}
+        {showRightShadow && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute top-0 right-0 bottom-12 z-25 w-6 bg-gradient-to-l from-slate-900/10 to-transparent transition-opacity duration-200"
+          />
+        )}
+
         {/* Scrollable Scheduler Container */}
         <div
           ref={containerRef}
+          onScroll={updateScrollShadows}
           role="grid"
           aria-label="Lịch trạng thái sân cầu lông"
-          className="relative flex-1 overflow-auto outline-none scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100"
-          style={{ maxHeight: 'calc(100vh - 220px)' }}
+          className="relative flex-1 w-full overflow-x-auto overflow-y-auto scroll-smooth outline-none scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100"
+          style={{ maxHeight: 'calc(100vh - 210px)' }}
         >
           {/* Main Table Structure */}
           <div
             style={{
-              width: `${SCHEDULER_CONFIG.TOTAL_LEFT_COLUMN_WIDTH + totalGridWidth}px`,
+              width: `${SCHEDULER_CONFIG.TOTAL_LEFT_COLUMN_WIDTH + timelineWidth}px`,
               minWidth: '100%',
             }}
           >
             {/* Sticky Time Header */}
-            <TimeHeader timeSlots={timeSlots} slotWidth={slotWidth} />
+            <TimeHeader
+              timeSlots={timeSlots}
+              slotWidth={slotWidth}
+              timelineWidth={timelineWidth}
+              closeTime={normalizedCloseTime}
+              currentTimeOffsetPx={currentTimeOffsetPx}
+              currentTimeLabel={currentTimeLabel}
+            />
 
             {/* Grid Area with Left Sticky Court Column and Dynamic Rows */}
             <div className="flex">
@@ -200,11 +301,14 @@ export const CourtScheduler: React.FC<CourtSchedulerProps> = memo(
                 timeSlots={timeSlots}
                 bookings={bookings}
                 slotWidth={slotWidth}
+                timelineWidth={timelineWidth}
+                openTime={normalizedOpenTime}
                 slotInterval={slotInterval}
                 virtualRows={virtualRows}
                 totalHeight={totalVirtualHeight}
                 totalWidth={totalGridWidth}
                 activeSelection={activeSelection}
+                currentTimeOffsetPx={currentTimeOffsetPx}
                 onSlotClick={handleSlotClick}
                 isSlotSelected={isSlotSelected}
                 onConfirmSelection={handleConfirmSelection}

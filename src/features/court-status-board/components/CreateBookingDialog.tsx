@@ -3,7 +3,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useTranslation } from 'react-i18next';
-import { Clock, AlertTriangle, Crown, UserCheck, Sparkles, User } from 'lucide-react';
+import { Clock, AlertTriangle, Crown, Sparkles, User } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { CustomerSearch } from '@/features/customer-management/components/CustomerSearch';
 import type { Customer } from '@/features/customer-management/types/customer';

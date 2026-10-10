@@ -29,7 +29,7 @@ export * from './components/BookingHistoryTable';
 export * from './components/MembershipCard';
 export * from './components/CustomerSkeleton';
 export * from './components/CustomerEmptyState';
-export * from './components/CustomerFilters';
+export { CustomerFilters } from './components/CustomerFilters';
 export * from './components/CustomerAnalytics';
 export * from './components/ErrorState';
 

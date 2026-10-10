@@ -11,5 +11,16 @@ export const paths = {
   customerDetail: (id: string = ':id') => `/customers/${id}`,
   customerCreate: '/customers/new',
   customerEdit: (id: string = ':id') => `/customers/${id}/edit`,
+  customerCourtStatus: '/customer/court-status',
+  customerBranchCourtStatus: (branchId: string = ':branchId', date?: string) =>
+    date
+      ? `/customer/branches/${branchId}/court-status?date=${encodeURIComponent(date)}`
+      : `/customer/branches/${branchId}/court-status`,
+  playerMatching: '/player-matching',
+  playerMatchingDetail: (id: string = ':id') => `/player-matching/${id}`,
+  adminBranches: '/admin/branches',
+  adminBranchCreate: '/admin/branches/create',
+  adminBranchDetail: (id: string = ':id') => `/admin/branches/${id}`,
+  adminBranchEdit: (id: string = ':id') => `/admin/branches/${id}/edit`,
   notFound: '*',
 } as const;

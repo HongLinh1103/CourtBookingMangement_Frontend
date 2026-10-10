@@ -11,6 +11,7 @@ interface SlotSelectionOverlayProps {
   selection: SlotSelectionRange;
   slotWidth: number;
   slotInterval: number;
+  openTime?: string;
   rowHeight?: number;
   onConfirm: (selection: SlotSelectionRange) => void;
   onClear: () => void;
@@ -22,11 +23,13 @@ export const SlotSelectionOverlay: React.FC<SlotSelectionOverlayProps> = memo(
     selection,
     slotWidth,
     slotInterval,
+    openTime,
     rowHeight = 44,
     onConfirm,
     onClear,
   }) => {
     const { t } = useTranslation();
+    const selectedDate = useCourtStatusStore((s) => s.selectedDate);
 
     if (selection.courtId !== courtId) return null;
 
@@ -35,9 +38,9 @@ export const SlotSelectionOverlay: React.FC<SlotSelectionOverlayProps> = memo(
       selection.endTime,
       slotWidth,
       slotInterval,
+      openTime,
     );
 
-    const selectedDate = useCourtStatusStore((s) => s.selectedDate);
     const isPastDate = SchedulerService.isPastDate(selectedDate);
     const hasPastSlot = isPastDate || SchedulerService.isPastSlot(selectedDate, selection.startTime);
 

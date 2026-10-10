@@ -21,16 +21,49 @@ const CustomerEditPage = lazy(() => import('@/features/customer-management/pages
 const BranchDiscoveryPage = lazy(
   () => import('@/features/branch-discovery/pages/BranchDiscoveryPage'),
 );
+const CustomerCourtStatusPage = lazy(
+  () => import('@/features/customer-court-status/pages/CustomerCourtStatusPage'),
+);
+const DiscoverMatchesPage = lazy(
+  () => import('@/features/player-matching/pages/DiscoverMatchesPage'),
+);
+const AdminBranchLayout = lazy(() => import('@/pages/admin/branches/AdminBranchLayout'));
+const BranchListPage = lazy(() => import('@/pages/admin/branches/BranchListPage'));
+const BranchCreatePage = lazy(() => import('@/pages/admin/branches/BranchCreatePage'));
+const BranchDetailPage = lazy(() => import('@/pages/admin/branches/BranchDetailPage'));
+const BranchEditPage = lazy(() => import('@/pages/admin/branches/BranchEditPage'));
 const NotFoundPage = lazy(() => import('@/components/common/NotFoundPage'));
 
 const withSuspense = (node: React.ReactNode) => (
   <Suspense fallback={<RouteFallback />}>{node}</Suspense>
 );
 
+// Router configuration is intentionally exported alongside the component entry point.
+// eslint-disable-next-line react-refresh/only-export-components
 export const router = createBrowserRouter([
   {
     path: paths.root,
     element: withSuspense(<BranchDiscoveryPage />),
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: paths.customerCourtStatus,
+    element: withSuspense(<CustomerCourtStatusPage />),
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: paths.customerBranchCourtStatus(),
+    element: withSuspense(<CustomerCourtStatusPage />),
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: paths.playerMatching,
+    element: withSuspense(<DiscoverMatchesPage />),
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: paths.playerMatchingDetail(),
+    element: withSuspense(<DiscoverMatchesPage />),
     errorElement: <RouteErrorBoundary />,
   },
   {
@@ -60,6 +93,16 @@ export const router = createBrowserRouter([
           { path: paths.customerCreate, element: withSuspense(<CustomerCreatePage />) },
           { path: '/customers/:id', element: withSuspense(<CustomerDetailPage />) },
           { path: '/customers/:id/edit', element: withSuspense(<CustomerEditPage />) },
+        ],
+      },
+      {
+        path: paths.adminBranches,
+        element: withSuspense(<AdminBranchLayout />),
+        children: [
+          { index: true, element: withSuspense(<BranchListPage />) },
+          { path: 'create', element: withSuspense(<BranchCreatePage />) },
+          { path: ':id', element: withSuspense(<BranchDetailPage />) },
+          { path: ':id/edit', element: withSuspense(<BranchEditPage />) },
         ],
       },
     ],

@@ -12,6 +12,8 @@ export interface CourtBranch {
   id: string;
   name: string;
   address?: string;
+  openTime?: string;
+  closeTime?: string;
 }
 
 export interface CourtGroup {

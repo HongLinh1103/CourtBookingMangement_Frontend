@@ -7,6 +7,7 @@ import { SlotSelectionOverlay } from './SlotSelectionOverlay';
 import { SCHEDULER_CONFIG } from '../constants/scheduler';
 import { SchedulerService } from '../services/scheduler.service';
 import { useCourtStatusStore } from '../store/court-status.store';
+import { toast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
 
 interface SchedulerGridProps {
@@ -14,13 +15,16 @@ interface SchedulerGridProps {
   timeSlots: TimeSlot[];
   bookings: BookingItem[];
   slotWidth: number;
+  timelineWidth?: number;
+  openTime?: string;
   slotInterval: number;
   virtualRows: { index: number; start: number; size: number }[];
   totalHeight: number;
   totalWidth: number;
   activeSelection: SlotSelectionRange | null;
+  currentTimeOffsetPx?: number | null;
   onSlotClick: (court: CourtItem, slot: TimeSlot) => void;
-  isSlotSelected: (courtId: string, slotTime: string) => boolean;
+  isSlotSelected: (courtId: string, slotTime: string) => void | boolean;
   onConfirmSelection: (selection: SlotSelectionRange) => void;
   onClearSelection: () => void;
   onSelectBooking: (booking: BookingItem) => void;
@@ -37,11 +41,14 @@ export const SchedulerGrid: React.FC<SchedulerGridProps> = memo(
     timeSlots,
     bookings,
     slotWidth,
+    timelineWidth,
+    openTime = SCHEDULER_CONFIG.START_TIME,
     slotInterval,
     virtualRows,
     totalHeight,
     totalWidth,
     activeSelection,
+    currentTimeOffsetPx = null,
     onSlotClick,
     isSlotSelected,
     onConfirmSelection,
@@ -54,6 +61,7 @@ export const SchedulerGrid: React.FC<SchedulerGridProps> = memo(
     onCancelBooking,
   }) => {
     const selectedDate = useCourtStatusStore((s) => s.selectedDate);
+    const effectiveTimelineWidth = timelineWidth ?? totalWidth + SCHEDULER_CONFIG.BOUNDARY_PADDING_PX;
 
     // Performance: Memoize disabled slot calculation for all slots on the current date
     const disabledSlotMap = useMemo(() => {
@@ -67,7 +75,7 @@ export const SchedulerGrid: React.FC<SchedulerGridProps> = memo(
     return (
       <div
         style={{
-          width: `${totalWidth}px`,
+          width: `${effectiveTimelineWidth}px`,
           height: `${totalHeight}px`,
           position: 'relative',
         }}
@@ -87,8 +95,9 @@ export const SchedulerGrid: React.FC<SchedulerGridProps> = memo(
                 position: 'absolute',
                 top: 0,
                 left: 0,
-                width: `${totalWidth}px`,
+                width: `${effectiveTimelineWidth}px`,
                 height: `${virtualRow.size}px`,
+                minHeight: '44px',
                 transform: `translateY(${virtualRow.start}px)`,
               }}
               className="flex border-b border-[#e2e8f0]"
@@ -96,7 +105,7 @@ export const SchedulerGrid: React.FC<SchedulerGridProps> = memo(
               {/* Background grid cells with past slot protection & click-to-select support */}
               {timeSlots.map((slot) => {
                 const isPast = disabledSlotMap.get(slot.time) ?? false;
-                const isSelected = !isPast && isSlotSelected(court.id, slot.time);
+                const isSelected = !isPast && Boolean(isSlotSelected(court.id, slot.time));
 
                 const cellTitle = isPast
                   ? 'Past time slots cannot be booked.'
@@ -110,18 +119,37 @@ export const SchedulerGrid: React.FC<SchedulerGridProps> = memo(
                     role="gridcell"
                     aria-selected={isSelected}
                     aria-disabled={isPast ? 'true' : undefined}
-                    style={{ width: `${slotWidth}px` }}
-                    onClick={isPast ? undefined : () => onSlotClick(court, slot)}
+                    style={{
+                      width: `${slotWidth}px`,
+                      minWidth: `${Math.max(SCHEDULER_CONFIG.MIN_SLOT_WIDTH, slotWidth)}px`,
+                      minHeight: '44px',
+                    }}
+                    onClick={
+                      isPast
+                        ? () =>
+                            toast.info(
+                              'Khung giờ đã qua không thể đặt lịch.',
+                              'This time slot has already passed.',
+                            )
+                        : () => onSlotClick(court, slot)
+                    }
                     title={cellTitle}
                     className={cn(
-                      'relative h-full shrink-0 border-r border-[#e2e8f0] select-none transition-colors',
+                      'group relative h-full shrink-0 border-r border-[#e2e8f0] select-none transition-colors touch-manipulation',
                       isPast
-                        ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                        ? 'scheduler-cell--past text-slate-400 cursor-not-allowed'
                         : isSelected
                           ? 'bg-emerald-500/25 border-t-2 border-b-2 border-emerald-600 cursor-pointer'
-                          : 'cursor-pointer hover:bg-emerald-50/60 active:bg-emerald-100/70',
+                          : 'cursor-pointer hover:bg-emerald-50/70 active:bg-emerald-100/80',
                     )}
                   >
+                    {!isPast && !isSelected && (
+                      <div className="absolute inset-0 hidden group-hover:flex items-center justify-center pointer-events-none">
+                        <span className="text-[10px] font-semibold text-emerald-700/80 bg-emerald-50/90 px-1.5 py-0.5 rounded">
+                          + {slot.formattedTime}
+                        </span>
+                      </div>
+                    )}
                     {isSelected && (
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                         <span className="size-2 rounded-full bg-emerald-600 ring-2 ring-white shadow-xs" />
@@ -138,6 +166,7 @@ export const SchedulerGrid: React.FC<SchedulerGridProps> = memo(
                   selection={activeSelection}
                   slotWidth={slotWidth}
                   slotInterval={slotInterval}
+                  openTime={openTime}
                   rowHeight={virtualRow.size || SCHEDULER_CONFIG.ROW_HEIGHT}
                   onConfirm={onConfirmSelection}
                   onClear={onClearSelection}
@@ -151,6 +180,7 @@ export const SchedulerGrid: React.FC<SchedulerGridProps> = memo(
                 bookings={bookings}
                 slotWidth={slotWidth}
                 slotInterval={slotInterval}
+                openTime={openTime}
                 rowHeight={virtualRow.size || SCHEDULER_CONFIG.ROW_HEIGHT}
                 onSelectBooking={onSelectBooking}
                 onEditBooking={onEditBooking}
@@ -162,6 +192,19 @@ export const SchedulerGrid: React.FC<SchedulerGridProps> = memo(
             </div>
           );
         })}
+
+        {/* Current Time Indicator Red Line */}
+        {currentTimeOffsetPx !== null && (
+          <div
+            style={{
+              position: 'absolute',
+              left: `${currentTimeOffsetPx}px`,
+              top: 0,
+              height: `${totalHeight}px`,
+            }}
+            className="w-[2px] -translate-x-1/2 bg-rose-500/90 pointer-events-none z-25 shadow-[0_0_4px_rgba(244,63,94,0.5)]"
+          />
+        )}
       </div>
     );
   },

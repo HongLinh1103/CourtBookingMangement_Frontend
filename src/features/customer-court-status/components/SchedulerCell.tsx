@@ -1,0 +1,107 @@
+import React, { memo, useCallback } from 'react';
+import { useSchedulerSelectionStore } from '../store/scheduler-selection.store';
+import { MIN_SLOT_WIDTH, SLOT_WIDTH } from '../constants/customer-scheduler.config';
+import { toast } from '@/lib/toast';
+import { cn } from '@/lib/utils';
+
+interface SchedulerCellProps {
+  courtId: string;
+  courtName: string;
+  slotTime: string;
+  slotEndTime?: string;
+  slotWidth?: number;
+  isPast?: boolean;
+  onSlotClick: (courtId: string, slotTime: string) => void;
+}
+
+export const SchedulerCell: React.FC<SchedulerCellProps> = memo(
+  ({
+    courtId,
+    courtName,
+    slotTime,
+    slotEndTime,
+    slotWidth = SLOT_WIDTH,
+    isPast = false,
+    onSlotClick,
+  }) => {
+    // Single source of truth from schedulerSelectionStore
+    const selectedCourtId = useSchedulerSelectionStore((s) => s.selectedCourtId);
+    const selectedSlots = useSchedulerSelectionStore((s) => s.selectedSlots);
+
+    const isCurrentCourt = selectedCourtId === courtId;
+    const isSelected = !isPast && isCurrentCourt && selectedSlots.includes(slotTime);
+    const rangeLabel = slotEndTime ? `${slotTime} - ${slotEndTime}` : slotTime;
+
+    const handleClick = useCallback(() => {
+      if (isPast) {
+        toast.info('Khung giờ đã qua không thể đặt sân.', 'This time slot has already passed.');
+        return;
+      }
+      onSlotClick(courtId, slotTime);
+    }, [isPast, onSlotClick, courtId, slotTime]);
+
+    const handleKeyDown = useCallback(
+      (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (isPast) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onSlotClick(courtId, slotTime);
+        }
+      },
+      [isPast, onSlotClick, courtId, slotTime],
+    );
+
+    const cellTitle = isPast
+      ? 'Khung giờ đã qua không thể đặt sân (Past time slots cannot be booked).'
+      : isSelected
+        ? `Bấm để bỏ chọn ${courtName} (${rangeLabel})`
+        : `Bấm để chọn ${courtName} (${rangeLabel})`;
+
+    return (
+      <div
+        role="gridcell"
+        tabIndex={isPast ? -1 : 0}
+        aria-selected={isSelected}
+        aria-disabled={isPast ? 'true' : undefined}
+        aria-label={`${courtName} ${rangeLabel} ${
+          isPast ? 'đã qua không thể đặt' : isSelected ? 'đang chọn' : 'trống'
+        }`}
+        style={{
+          width: `${slotWidth}px`,
+          minWidth: `${Math.max(MIN_SLOT_WIDTH, slotWidth)}px`,
+          minHeight: '44px',
+        }}
+        onClick={handleClick}
+        onKeyDown={handleKeyDown}
+        className={cn(
+          'group shrink-0 h-full transition-colors duration-150 select-none relative touch-manipulation',
+          isPast
+            ? 'scheduler-cell--past text-slate-400 cursor-not-allowed border-r border-slate-200/90'
+            : isSelected
+              ? 'bg-emerald-100/90 border-2 border-emerald-600 text-emerald-950 shadow-inner z-5 cursor-pointer'
+              : 'bg-white border-r border-slate-200/90 hover:bg-emerald-50/70 active:bg-emerald-100/80 cursor-pointer',
+        )}
+        title={cellTitle}
+      >
+        {/* Subtle Hover Highlight Label (only for available future slots) */}
+        {!isPast && !isSelected && (
+          <div className="absolute inset-0 hidden group-hover:flex items-center justify-center pointer-events-none">
+            <span className="text-[10px] font-semibold text-emerald-700/80 bg-emerald-50/90 px-1.5 py-0.5 rounded">
+              + {slotTime}
+            </span>
+          </div>
+        )}
+
+        {/* Selected Cell Highlight Indicator */}
+        {isSelected && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <span className="size-2 rounded-full bg-emerald-600 ring-2 ring-white shadow-xs" />
+          </div>
+        )}
+      </div>
+    );
+  },
+);
+
+SchedulerCell.displayName = 'SchedulerCell';
+

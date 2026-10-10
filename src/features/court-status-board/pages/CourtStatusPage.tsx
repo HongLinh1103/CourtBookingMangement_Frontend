@@ -17,6 +17,8 @@ import { CourtStatusSkeleton } from '../components/CourtStatusSkeleton';
 import { ErrorState } from '../components/ErrorState';
 import { EmptyState } from '../components/EmptyState';
 import type { BookingItem } from '../types/booking';
+import { LanguageSwitcher } from '@/shared/components/LanguageSwitcher';
+import { ManagementNavigation } from '@/components/navigation';
 
 export const CourtStatusPage: React.FC = () => {
   const { t } = useTranslation();
@@ -79,6 +81,11 @@ export const CourtStatusPage: React.FC = () => {
   }, [navigate]);
 
   const isPastDate = useMemo(() => SchedulerService.isPastDate(selectedDate), [selectedDate]);
+
+  const currentBranch = useMemo(
+    () => branches.find((b) => b.id === selectedBranch) ?? branches[0],
+    [branches, selectedBranch],
+  );
 
   const handleOpenCreateBooking = useCallback(
     (initial?: {
@@ -178,12 +185,20 @@ export const CourtStatusPage: React.FC = () => {
         </button>
 
         {/* Center: Title */}
-        <h1 className="text-base sm:text-lg font-bold tracking-tight text-white drop-shadow-xs">
-          {t('courtStatus.title', 'Trạng thái sân')}
-        </h1>
+        <div className="min-w-0 text-center">
+          <h1 className="text-base sm:text-lg font-bold tracking-tight text-white drop-shadow-xs">
+            {t('courtStatus.title', 'Trạng thái sân')}
+          </h1>
+          <p className="hidden xl:block text-xs text-white/70 truncate">
+            {t('courtStatus.description', 'Theo dõi lịch đặt và tình trạng các sân theo thời gian thực')}
+          </p>
+        </div>
 
-        {/* Right: Search and Filter Icons */}
-        <div className="flex items-center gap-1">
+        <ManagementNavigation />
+
+        {/* Right: Language Switcher, Search and Filter Icons */}
+        <div className="flex items-center gap-1 sm:gap-2">
+          <LanguageSwitcher variant="contrast" className="mr-1" />
           <button
             type="button"
             aria-label={t('courtStatus.header.search', 'Tìm kiếm')}
@@ -225,7 +240,7 @@ export const CourtStatusPage: React.FC = () => {
       </section>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col bg-white">
+      <main className="flex-1 flex flex-col w-full h-full bg-white overflow-hidden">
         {isLoading ? (
           <CourtStatusSkeleton />
         ) : isError ? (
@@ -240,96 +255,27 @@ export const CourtStatusPage: React.FC = () => {
             />
           </div>
         ) : (
-          <>
-            {/* Desktop & Tablet View: Full Scheduler */}
-            <div className="hidden md:flex flex-1 flex-col">
-              <CourtScheduler
-                courts={courts}
-                bookings={bookings}
-                slotInterval={slotInterval}
-                dateLabel={dateLabel}
-                zoomLevel={zoomLevel}
-                onZoomChange={setZoomLevel}
-                onResetFilters={resetFilters}
-                onOpenCreateBooking={handleOpenCreateBooking}
-                onOpenCreateEvent={handleOpenCreateEvent}
-                onSelectBooking={openDetailDrawer}
-                onEditBooking={openEditDialog}
-                onCheckIn={handleCheckIn}
-                onCheckOut={handleCheckOut}
-                onCreateInvoice={handleCreateInvoice}
-                onCancelBooking={handleCancelBooking}
-              />
-            </div>
-
-            {/* Mobile View (<768px): Card / List Mode per court */}
-            <div className="md:hidden flex flex-col p-3 space-y-3 bg-slate-50">
-              <div className="flex items-center justify-between bg-white p-3 rounded-xl shadow-xs border border-slate-200">
-                <span className="font-bold text-sm text-slate-800">
-                  {dateLabel.dayOfWeek}, {dateLabel.formattedDate}
-                </span>
-                <span className="text-xs text-slate-500">
-                  {bookings.length} {t('courtStatus.mobile.activeBookings', 'lượt đặt')}
-                </span>
-              </div>
-
-              {courts.map((court) => {
-                const courtBookings = bookings.filter((b) => b.courtId === court.id);
-                return (
-                  <div
-                    key={court.id}
-                    className="bg-white rounded-xl border border-slate-200 p-3 shadow-xs space-y-2"
-                  >
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="size-2 rounded-full bg-emerald-500" />
-                        <h3 className="font-bold text-slate-900">{court.name}</h3>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          openCreateDialog({
-                            courtId: court.id,
-                            courtName: court.name,
-                            date: selectedDate,
-                          })
-                        }
-                        className="text-xs font-semibold text-emerald-600 hover:text-emerald-700"
-                      >
-                        + Đặt sân
-                      </button>
-                    </div>
-
-                    {courtBookings.length === 0 ? (
-                      <div className="text-xs text-slate-400 py-1 italic">
-                        {t('courtStatus.mobile.emptyCourt', 'Sân trống cả ngày')}
-                      </div>
-                    ) : (
-                      <div className="space-y-1.5 pt-1">
-                        {courtBookings.map((b) => (
-                          <div
-                            key={b.id}
-                            onClick={() => openDetailDrawer(b)}
-                            className="flex items-center justify-between p-2 rounded-lg bg-slate-50 hover:bg-emerald-50/70 border border-slate-100 transition-colors cursor-pointer"
-                          >
-                            <div className="text-xs">
-                              <span className="font-bold text-slate-900">{b.customerName}</span>
-                              <div className="text-[11px] text-slate-500">
-                                {b.startTime} - {b.endTime}
-                              </div>
-                            </div>
-                            <span className="text-xs font-semibold text-emerald-700">
-                              {(b.totalAmount ?? 0).toLocaleString('vi-VN')} đ
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </>
+          <div className="flex flex-1 flex-col w-full h-full overflow-hidden">
+            <CourtScheduler
+              courts={courts}
+              bookings={bookings}
+              openTime={currentBranch?.openTime}
+              closeTime={currentBranch?.closeTime}
+              slotInterval={slotInterval}
+              dateLabel={dateLabel}
+              zoomLevel={zoomLevel}
+              onZoomChange={setZoomLevel}
+              onResetFilters={resetFilters}
+              onOpenCreateBooking={handleOpenCreateBooking}
+              onOpenCreateEvent={handleOpenCreateEvent}
+              onSelectBooking={openDetailDrawer}
+              onEditBooking={openEditDialog}
+              onCheckIn={handleCheckIn}
+              onCheckOut={handleCheckOut}
+              onCreateInvoice={handleCreateInvoice}
+              onCancelBooking={handleCancelBooking}
+            />
+          </div>
         )}
       </main>
 
