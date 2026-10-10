@@ -38,6 +38,8 @@ const withSuspense = (node: React.ReactNode) => (
   <Suspense fallback={<RouteFallback />}>{node}</Suspense>
 );
 
+// Router configuration is intentionally exported alongside the component entry point.
+// eslint-disable-next-line react-refresh/only-export-components
 export const router = createBrowserRouter([
   {
     path: paths.root,

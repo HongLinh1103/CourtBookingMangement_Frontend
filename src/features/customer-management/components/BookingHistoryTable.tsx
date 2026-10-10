@@ -24,9 +24,8 @@ interface BookingHistoryTableProps {
 }
 
 export const BookingHistoryTable: React.FC<BookingHistoryTableProps> = memo(
-  ({ bookings, isLoading = false }) => {
+  ({ bookings }) => {
     const { t } = useTranslation();
-    void isLoading;
 
     const [statusFilter, setStatusFilter] = useState<BookingHistoryStatus | 'all'>('all');
     const [paymentFilter, setPaymentFilter] = useState<PaymentHistoryStatus | 'all'>('all');

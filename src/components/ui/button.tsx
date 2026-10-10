@@ -58,4 +58,6 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 );
 Button.displayName = 'Button';
 
+// The variant helper is exported for consumers that need matching styles.
+// eslint-disable-next-line react-refresh/only-export-components
 export { buttonVariants };
