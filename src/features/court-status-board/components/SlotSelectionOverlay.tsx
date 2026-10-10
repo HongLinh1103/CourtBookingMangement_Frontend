@@ -29,6 +29,7 @@ export const SlotSelectionOverlay: React.FC<SlotSelectionOverlayProps> = memo(
     onClear,
   }) => {
     const { t } = useTranslation();
+    const selectedDate = useCourtStatusStore((s) => s.selectedDate);
 
     if (selection.courtId !== courtId) return null;
 
@@ -40,7 +41,6 @@ export const SlotSelectionOverlay: React.FC<SlotSelectionOverlayProps> = memo(
       openTime,
     );
 
-    const selectedDate = useCourtStatusStore((s) => s.selectedDate);
     const isPastDate = SchedulerService.isPastDate(selectedDate);
     const hasPastSlot = isPastDate || SchedulerService.isPastSlot(selectedDate, selection.startTime);
 

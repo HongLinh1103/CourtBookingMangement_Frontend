@@ -12,7 +12,6 @@ export const trackAnalyticsEvent = (
   payload: AnalyticsEventPayload,
 ): void => {
   if (typeof window !== 'undefined') {
-    // eslint-disable-next-line no-console
     console.info(`[Analytics] ${eventName}:`, payload);
 
     window.dispatchEvent(
