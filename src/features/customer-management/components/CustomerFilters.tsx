@@ -8,12 +8,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { FILTER_CONTROL_CLASS } from '@/components/management';
-import type { CustomerFilters as CustomerFiltersType, CustomerStatus, MemberType } from '../types/customer';
+import type { CustomerFilterState, CustomerStatus, MemberType } from '../types/customer';
 import { CUSTOMER_STATUS_CONFIG, MEMBER_TYPE_CONFIG } from '../constants/customer-status';
 
 interface CustomerFiltersProps {
-  filters: CustomerFiltersType;
-  onChangeFilters: (filters: Partial<CustomerFiltersType>) => void;
+  filters: CustomerFilterState;
+  onChangeFilters: (filters: Partial<CustomerFilterState>) => void;
 }
 
 /** Dropdown filters only; search and the reset action live in the shared FilterPanel. */
