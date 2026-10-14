@@ -32,5 +32,4 @@ function Badge({ className, variant, ...props }: BadgeProps) {
 }
 
 // The variant helper is exported for consumers that need matching styles.
-// eslint-disable-next-line react-refresh/only-export-components
 export { Badge, badgeVariants };

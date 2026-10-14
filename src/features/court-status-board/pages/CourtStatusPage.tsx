@@ -1,19 +1,20 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Search, Filter } from 'lucide-react';
+import { ArrowLeft, Filter } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { SchedulerService } from '../services/scheduler.service';
 import { useCourtStatus } from '../hooks/useCourtStatus';
 import { useCourtStatusFilters } from '../hooks/useCourtStatusFilters';
 import { useCourtStatusSocket } from '../hooks/useCourtStatusSocket';
 import { useCourtStatusStore } from '../store/court-status.store';
+import { useMyBranches } from '@/hooks/branches/useMyBranches';
 import { CourtStatusFilters } from '../components/CourtStatusFilters';
 import { LegendBar } from '../components/LegendBar';
 import { CourtScheduler } from '../components/CourtScheduler';
 import { BookingDetailDrawer } from '../components/BookingDetailDrawer';
 import { CreateBookingDialog } from '../components/CreateBookingDialog';
-import { CourtStatusSkeleton } from '../components/CourtStatusSkeleton';
+import { CourtStatusBoardSkeleton } from '../components/CourtStatusBoardSkeleton';
 import { ErrorState } from '../components/ErrorState';
 import { EmptyState } from '../components/EmptyState';
 import type { BookingItem } from '../types/booking';
@@ -23,6 +24,15 @@ import { ManagementNavigation } from '@/components/navigation';
 export const CourtStatusPage: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+  // Branch list from backend API
+  const {
+    data: myBranches = [],
+    isLoading: isBranchesLoading,
+    isError: isBranchesError,
+    error: branchesError,
+    refetch: refetchBranches,
+  } = useMyBranches();
 
   // Filters hook
   const {
@@ -39,12 +49,25 @@ export const CourtStatusPage: React.FC = () => {
     resetFilters,
   } = useCourtStatusFilters();
 
-  // Server state query & mutations
+  // Auto-select branch logic
+  // Case 1 & Case 2: Auto select first branch when branches are loaded and none or invalid branch selected
+  // Case 3: No branches returned -> do not select branch
+  useEffect(() => {
+    if (myBranches.length === 0) return;
+
+    const branchExists = myBranches.some((b) => b.id === selectedBranch);
+    if (!selectedBranch || !branchExists) {
+      handleBranchChange(myBranches[0]!.id);
+    }
+  }, [myBranches, selectedBranch, handleBranchChange]);
+
+  // Server state query & mutations (automatically refetches when filterParams.branchId changes)
   const {
     courts,
     bookings,
-    branches,
-    groups,
+    groups = [],
+    openTime,
+    closeTime,
     isLoading,
     isError,
     error,
@@ -82,20 +105,17 @@ export const CourtStatusPage: React.FC = () => {
 
   const isPastDate = useMemo(() => SchedulerService.isPastDate(selectedDate), [selectedDate]);
 
-  const currentBranch = useMemo(
-    () => branches.find((b) => b.id === selectedBranch) ?? branches[0],
-    [branches, selectedBranch],
-  );
-
   const handleOpenCreateBooking = useCallback(
     (initial?: {
+      branchId?: string;
       courtId?: string;
       courtName?: string;
       date?: string;
+      bookingDate?: string;
       startTime?: string;
       endTime?: string;
     }) => {
-      const targetDate = initial?.date ?? selectedDate;
+      const targetDate = initial?.bookingDate ?? initial?.date ?? selectedDate;
       if (SchedulerService.isPastDate(targetDate)) {
         toast.error(
           t('courtStatus.pastDateAlert', 'Cannot create bookings for past dates.'),
@@ -110,9 +130,14 @@ export const CourtStatusPage: React.FC = () => {
         );
         return;
       }
-      openCreateDialog({ date: targetDate, ...initial });
+      openCreateDialog({
+        branchId: initial?.branchId ?? selectedBranch,
+        date: targetDate,
+        bookingDate: targetDate,
+        ...initial,
+      });
     },
-    [openCreateDialog, selectedDate, t],
+    [openCreateDialog, selectedDate, selectedBranch, t],
   );
 
   const handleOpenCreateEvent = useCallback(() => {
@@ -184,28 +209,15 @@ export const CourtStatusPage: React.FC = () => {
           <ArrowLeft className="size-5 stroke-[2.5]" />
         </button>
 
-        {/* Center: Title */}
-        <div className="min-w-0 text-center">
-          <h1 className="text-base sm:text-lg font-bold tracking-tight text-white drop-shadow-xs">
-            {t('courtStatus.title', 'Trạng thái sân')}
-          </h1>
-          <p className="hidden xl:block text-xs text-white/70 truncate">
-            {t('courtStatus.description', 'Theo dõi lịch đặt và tình trạng các sân theo thời gian thực')}
-          </p>
-        </div>
+
 
         <ManagementNavigation />
 
         {/* Right: Language Switcher, Search and Filter Icons */}
         <div className="flex items-center gap-1 sm:gap-2">
           <LanguageSwitcher variant="contrast" className="mr-1" />
-          <button
-            type="button"
-            aria-label={t('courtStatus.header.search', 'Tìm kiếm')}
-            className="grid size-9 place-items-center rounded-full text-white/90 transition-colors hover:bg-white/15 active:scale-95"
-          >
-            <Search className="size-5 stroke-[2.2]" />
-          </button>
+
+          {/* Avatar here */}
           <button
             type="button"
             aria-label={t('courtStatus.header.filter', 'Bộ lọc')}
@@ -219,13 +231,16 @@ export const CourtStatusPage: React.FC = () => {
       {/* Filter Section */}
       <section aria-label="Bộ lọc trạng thái sân" className="bg-[#0d6838] border-b border-white/10">
         <CourtStatusFilters
-          branches={branches}
+          branches={myBranches}
           groups={groups}
           selectedBranch={selectedBranch}
           selectedGroup={selectedCourtGroup}
           selectedDate={selectedDate}
           slotInterval={slotInterval}
           isLoading={isLoading}
+          isBranchesLoading={isBranchesLoading}
+          isBranchesError={isBranchesError}
+          onRetryBranches={() => void refetchBranches()}
           onBranchChange={handleBranchChange}
           onGroupChange={handleGroupChange}
           onDateChange={handleDateChange}
@@ -241,11 +256,37 @@ export const CourtStatusPage: React.FC = () => {
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col w-full h-full bg-white overflow-hidden">
-        {isLoading ? (
-          <CourtStatusSkeleton />
+        {isBranchesLoading || (isLoading && Boolean(selectedBranch)) ? (
+          <CourtStatusBoardSkeleton />
+        ) : isBranchesError ? (
+          <div className="p-6">
+            <ErrorState
+              title={t('courtStatus.filters.branchLoadError', 'Failed to load branches')}
+              message={
+                (branchesError as Error)?.message ||
+                t('courtStatus.branchLoadErrorDesc', 'Unable to retrieve your branch list.')
+              }
+              onRetry={() => void refetchBranches()}
+            />
+          </div>
+        ) : myBranches.length === 0 ? (
+          <div className="p-6">
+            <EmptyState
+              title={t('courtStatus.noBranches', 'No branches available')}
+              description={t(
+                'courtStatus.noBranchesDesc',
+                'No branches found for your account. Please contact the administrator.',
+              )}
+              date={selectedDate}
+            />
+          </div>
         ) : isError ? (
           <div className="p-6">
-            <ErrorState message={(error as Error)?.message} onRetry={() => refetch()} />
+            <ErrorState
+              title={t('courtStatus.error.title', 'Failed to load court schedule')}
+              message={(error as Error)?.message || t('courtStatus.error.tryAgain', 'Try Again')}
+              onRetry={() => refetch()}
+            />
           </div>
         ) : courts.length === 0 ? (
           <div className="p-6">
@@ -259,8 +300,8 @@ export const CourtStatusPage: React.FC = () => {
             <CourtScheduler
               courts={courts}
               bookings={bookings}
-              openTime={currentBranch?.openTime}
-              closeTime={currentBranch?.closeTime}
+              openTime={openTime}
+              closeTime={closeTime}
               slotInterval={slotInterval}
               dateLabel={dateLabel}
               zoomLevel={zoomLevel}
@@ -281,6 +322,7 @@ export const CourtStatusPage: React.FC = () => {
 
       {/* Booking Detail Drawer (Sheet) */}
       <BookingDetailDrawer
+        bookingId={selectedBooking?.id}
         booking={selectedBooking}
         isOpen={isDetailDrawerOpen}
         onClose={closeDetailDrawer}
@@ -297,6 +339,7 @@ export const CourtStatusPage: React.FC = () => {
         isOpen={isCreateDialogOpen}
         onClose={closeCreateDialog}
         courts={courts}
+        branchId={selectedBranch}
         defaultValues={createDialogDefaultValues}
         editingBooking={editingBooking}
         onSubmitBooking={handleSubmitBooking}
